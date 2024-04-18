@@ -21,7 +21,8 @@ export type BuildingName =
   | "Compost Bin"
   | "Turbo Composter"
   | "Premium Composter"
-  | Home;
+  | Home
+  | "Crop Machine";
 
 export type Ingredient = {
   item: InventoryItemName;
@@ -405,6 +406,27 @@ export const BUILDINGS: Record<BuildingName, BuildingBluePrint[]> = {
       ],
     },
   ],
+  "Crop Machine": [
+    {
+      unlocksAtLevel: 35,
+      coins: 8000,
+      constructionSeconds: 60 * 60 * 2,
+      ingredients: [
+        {
+          item: "Wood",
+          amount: new Decimal(1250),
+        },
+        {
+          item: "Iron",
+          amount: new Decimal(125),
+        },
+        {
+          item: "Crimstone",
+          amount: new Decimal(50),
+        },
+      ],
+    },
+  ],
 };
 
 export type Dimensions = { width: number; height: number };
@@ -427,4 +449,5 @@ export const BUILDINGS_DIMENSIONS: Record<BuildingName, Dimensions> = {
   "Compost Bin": { height: 2, width: 2 },
   "Turbo Composter": { height: 2, width: 2 },
   "Premium Composter": { height: 2, width: 2 },
+  "Crop Machine": { height: 4, width: 5 },
 };
