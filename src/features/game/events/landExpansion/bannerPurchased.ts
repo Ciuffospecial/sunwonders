@@ -7,6 +7,7 @@ import {
   SeasonalBanner,
   getPreviousSeasonalBanner,
   getSeasonByBanner,
+  getSeasonalBanner,
 } from "features/game/types/seasons";
 import { translate } from "lib/i18n/translate";
 
@@ -106,6 +107,13 @@ export function purchaseBanner({
 
   if (inventory["Lifetime Farmer Banner"] !== undefined) {
     throw new Error("You already have the Lifetime Farmer Banner");
+  }
+
+  const seasonBanner = getSeasonalBanner();
+  if (action.name !== seasonBanner) {
+    throw new Error(
+      `Attempt to purchase ${action.name} in ${seasonBanner} Season`
+    );
   }
 
   const previousBanner = getPreviousSeasonalBanner();
