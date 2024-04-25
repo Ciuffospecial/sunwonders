@@ -79,10 +79,9 @@ export const BuyCurrenciesModal: React.FC<Props> = ({ show, onClose }) => {
   const [exchangePackageId, setExchangePackageId] = useState<number>();
 
   // Banners
-  const [showConfirmation, setShowConfirmation] = useState(false);
   const [banner, setBanner] = useState<
-    SeasonalBanner | "Lifetime Farmer Banner"
-  >("Lifetime Farmer Banner");
+    SeasonalBanner | "Lifetime Farmer Banner" | null
+  >(null);
 
   // const [showPurchased, setShowPurchased] = useState(hasPurchased);
 
@@ -145,29 +144,46 @@ export const BuyCurrenciesModal: React.FC<Props> = ({ show, onClose }) => {
 
   const seasonalBannerImage = getSeasonalBannerImage();
 
-  const originalBannerPrice = 90;
-
   const previousBanner = getPreviousSeasonalBanner();
-  const hasPreviousBanner = !!state.inventory[previousBanner];
-  const seasonalBanner = getSeasonalBanner();
-  const bannerPrice = getBannerPrice(banner, hasPreviousBanner).toNumber();
+  const hasPreviousBanner = (
+    state.inventory[previousBanner] ?? new Decimal(0)
+  ).gt(0);
+  const hasGoldPass = (state.inventory["Gold Pass"] ?? new Decimal(0)).gt(0);
 
-  const hasDiscount = bannerPrice < originalBannerPrice;
+  const lifeTimeBannerPrice = getBannerPrice(
+    "Lifetime Farmer Banner",
+    hasPreviousBanner,
+    hasGoldPass
+  ).toNumber();
+
+  const originalSeasonalBannerPrice = 90;
+  const seasonalBanner = getSeasonalBanner();
+  const seasonalBannerPrice = getBannerPrice(
+    seasonalBanner,
+    hasPreviousBanner,
+    hasGoldPass
+  ).toNumber();
+
+  const hasSeasonalDiscount = seasonalBannerPrice < originalSeasonalBannerPrice;
 
   const onConfirm = (banner: SeasonalBanner | "Lifetime Farmer Banner") => {
     gameService.send("banner.purchased", {
       name: banner,
     });
-    setShowConfirmation(false);
+    setBanner(null);
   };
 
-  if (showConfirmation) {
+  if (banner) {
     return (
       <ConfirmationModal
-        onClose={() => setShowConfirmation(false)}
+        onClose={() => setBanner(null)}
         onConfirm={onConfirm}
         banner={banner}
-        price={bannerPrice}
+        price={getBannerPrice(
+          banner,
+          hasPreviousBanner,
+          hasGoldPass
+        ).toNumber()}
         seasonalBannerImage={seasonalBannerImage}
         inventory={state.inventory}
       />
@@ -206,7 +222,7 @@ export const BuyCurrenciesModal: React.FC<Props> = ({ show, onClose }) => {
             { icon: blockBuckIcon, name: `Block Bucks` },
             { icon: exchangeIcon, name: `${t("sfl/coins")}` },
             ...(hasFeatureAccess(state, "BANNER_SALES")
-              ? [{ icon: SUNNYSIDE.icons.basket, name: `Banner` }]
+              ? [{ icon: SUNNYSIDE.icons.basket, name: t("banner") }]
               : []),
           ]}
         >
@@ -313,10 +329,7 @@ export const BuyCurrenciesModal: React.FC<Props> = ({ show, onClose }) => {
               {/* Lifetime Farmer */}
               <OuterPanel
                 className="flex relative flex-col flex-1 items-center p-2 cursor-pointer hover:bg-brown-300"
-                onClick={() => {
-                  setShowConfirmation(true);
-                  setBanner("Lifetime Farmer Banner");
-                }}
+                onClick={() => setBanner("Lifetime Farmer Banner")}
               >
                 <Label
                   type="default"
@@ -324,7 +337,7 @@ export const BuyCurrenciesModal: React.FC<Props> = ({ show, onClose }) => {
                   icon={lifeTimeFarmerBanner}
                   iconWidth={16}
                   style={{
-                    width: "40%",
+                    paddingLeft: "24px",
                     top: "4px",
                     left: "0px",
                   }}
@@ -332,18 +345,20 @@ export const BuyCurrenciesModal: React.FC<Props> = ({ show, onClose }) => {
                   {t("season.lifetime.farmer")}
                 </Label>
 
-                <div className="flex mt-10 w-full relative">
+                <div className="flex mt-10 w-full relative items-center">
                   <img src={giftIcon} alt="Coins" className="w-5" />
-                  <p className="text-sm ml-2">{t("season.supporter.gift")}</p>
+                  <p className="text-xs sm:text-sm ml-2">
+                    {t("season.supporter.gift")}
+                  </p>
                 </div>
 
-                <div className="flex mt-2 w-full relative">
+                <div className="flex mt-2 w-full relative items-center">
                   <img
                     src={seasonalBannerImage}
                     alt="Seasonal Banner"
                     className="w-4 ml-[0.5px]"
                   />
-                  <p className="text-sm ml-2">
+                  <p className="text-xs sm:text-sm ml-2">
                     {t("season.free.season.passes")}
                   </p>
                 </div>
@@ -354,21 +369,18 @@ export const BuyCurrenciesModal: React.FC<Props> = ({ show, onClose }) => {
                   iconWidth={16}
                   className="absolute h-7"
                   style={{
-                    width: "20%",
+                    paddingLeft: "32px",
                     bottom: "2px",
                     right: "2px",
                   }}
                 >
-                  {getBannerPrice("Lifetime Farmer Banner", false).toNumber()}
+                  {lifeTimeBannerPrice}
                 </Label>
               </OuterPanel>
               {/* Season Banner */}
               <OuterPanel
                 className="flex relative flex-col flex-1 items-center p-2 cursor-pointer hover:bg-brown-300"
-                onClick={() => {
-                  setShowConfirmation(true);
-                  setBanner(seasonalBanner);
-                }}
+                onClick={() => setBanner(seasonalBanner)}
               >
                 <Label
                   icon={seasonalBannerImage}
@@ -376,7 +388,7 @@ export const BuyCurrenciesModal: React.FC<Props> = ({ show, onClose }) => {
                   iconWidth={16}
                   className="absolute h-7"
                   style={{
-                    width: "50%",
+                    paddingLeft: "24px",
                     top: "4px",
                     left: "0px",
                   }}
@@ -384,36 +396,47 @@ export const BuyCurrenciesModal: React.FC<Props> = ({ show, onClose }) => {
                   {seasonalBanner}
                 </Label>
 
-                <div className="flex mt-10 w-full relative">
+                <div className="flex mt-10 w-full relative items-center">
                   <img src={giftIcon} alt="Coins" className="w-5" />
-                  <p className="text-sm ml-2">{t("season.mystery.gift")}</p>
+                  <p className="text-xs sm:text-sm ml-2">
+                    {t("season.mystery.gift")}
+                  </p>
                 </div>
 
-                <div className="flex mt-2 w-full relative">
+                <div className="flex mt-2 w-full relative items-center">
                   <img
                     src={SUNNYSIDE.icons.confirm}
                     alt="Coins"
                     className="w-5 mt-1"
                   />
-                  <p className="text-sm ml-2">{t("season.vip.access")}</p>
+                  <p className="text-xs sm:text-sm ml-2">
+                    {t("season.vip.access")}
+                  </p>
                 </div>
 
-                <div className="flex mt-2 w-full relative">
+                <div className="flex mt-2 w-full relative items-center">
                   <img
                     src={increaseIcon}
                     alt="Coins"
                     className="w-3 mt-1 ml-1"
                   />
-                  <p className="text-sm ml-2">{t("season.xp.boost")}</p>
+                  <p className="text-xs sm:text-sm ml-2">
+                    {t("season.xp.boost")}
+                  </p>
                 </div>
 
-                {hasDiscount && (
-                  <p
-                    className="absolute text-xxs line-through bottom-2 right-[34px] bottom-9"
-                    style={{}}
+                {hasSeasonalDiscount && (
+                  <Label
+                    icon={blockBuckIcon}
+                    type="warning"
+                    className="absolute opacity-50 capitalize "
+                    style={{
+                      bottom: "32px",
+                      right: "2px",
+                    }}
                   >
-                    {originalBannerPrice}
-                  </p>
+                    {`${t("was")} ${originalSeasonalBannerPrice}`}
+                  </Label>
                 )}
                 <Label
                   icon={blockBuckIcon}
@@ -421,12 +444,12 @@ export const BuyCurrenciesModal: React.FC<Props> = ({ show, onClose }) => {
                   iconWidth={16}
                   className="absolute h-7"
                   style={{
-                    width: "20%",
+                    paddingLeft: "32px",
                     bottom: "2px",
                     right: "2px",
                   }}
                 >
-                  {getBannerPrice(seasonalBanner, hasPreviousBanner).toNumber()}
+                  {seasonalBannerPrice}
                 </Label>
               </OuterPanel>
             </div>
@@ -469,7 +492,7 @@ const ConfirmationModal: React.FC<ConfirmationProps> = ({
           iconWidth={16}
           className="absolute h-7"
           style={{
-            width: "50%",
+            paddingLeft: "24px",
             top: "14px",
             left: "10px",
           }}
@@ -478,19 +501,21 @@ const ConfirmationModal: React.FC<ConfirmationProps> = ({
         </Label>
 
         {isLifeTime && (
-          <div className="flex mt-12 w-full relative">
+          <div className="flex mt-12 w-full relative items-center">
             <img src={giftIcon} alt="Coins" className="w-5" />
-            <p className="text-sm ml-2">{t("season.supporter.gift")}</p>
+            <p className="text-xs sm:text-sm ml-2">
+              {t("season.supporter.gift")}
+            </p>
           </div>
         )}
 
         <div
-          className={classNames("flex w-full mt-2 relative", {
+          className={classNames("flex w-full mt-2 relative items-center", {
             "mt-12": !isLifeTime,
           })}
         >
           <img src={SUNNYSIDE.icons.confirm} alt="Coins" className="w-5" />
-          <p className="text-sm ml-2">{t("season.vip.access")}</p>
+          <p className="text-xs sm:text-sm ml-2">{t("season.vip.access")}</p>
         </div>
         <p className="text-xxs ml-6">{t("goblin.exchange")}</p>
         <p className="text-xxs ml-6">{t("p2p.trading")}</p>
@@ -498,34 +523,34 @@ const ConfirmationModal: React.FC<ConfirmationProps> = ({
         <p className="text-xxs ml-6">{t("season.bonusTickets")}</p>
         <p className="text-xxs ml-6">{t("season.megastore.discount")}</p>
 
-        <div className="flex mt-2 w-full relative">
+        <div className="flex mt-2 w-full relative items-center">
           <img
             src={seasonalBannerImage}
             alt="Coins"
             className="w-4 ml-[0.5px]"
           />
-          <p className="text-sm ml-2">{t("season.banner")}</p>
+          <p className="text-xs sm:text-sm ml-2">{t("season.banner")}</p>
         </div>
         {isLifeTime && (
           <p className="text-xxs ml-6">
             {t("season.free.season.passes.description")}
           </p>
         )}
-        <div className="flex mt-2 w-full relative">
+        <div className="flex mt-2 w-full relative items-center">
           <img src={giftIcon} alt="Coins" className="w-5" />
-          <p className="text-sm ml-2">{t("season.mystery.gift")}</p>
+          <p className="text-xs sm:text-sm ml-2">{t("season.mystery.gift")}</p>
         </div>
 
-        <div className="flex mt-2 mb-4 w-full relative">
+        <div className="flex mt-2 mb-4 w-full relative items-center">
           <img src={increaseIcon} alt="Coins" className="w-3 mt-1 ml-1" />
-          <p className="text-sm ml-2">{t("season.xp.boost")}</p>
+          <p className="text-xs sm:text-sm ml-2">{t("season.xp.boost")}</p>
         </div>
 
         {!hasBanner && !hasLifeTime && (
           <>
             {blockBuckBalance.lt(price) ? (
               <>
-                <p className="text-sm my-4">
+                <p className="text-xs sm:text-sm my-4">
                   {t("offer.not.enough.BlockBucks")}
                 </p>
                 <div className=" flex">
@@ -534,7 +559,7 @@ const ConfirmationModal: React.FC<ConfirmationProps> = ({
               </>
             ) : (
               <>
-                <p className="text-sm my-4">
+                <p className="text-xs sm:text-sm my-4">
                   {`Are you sure you want to purchase the ${banner} for ${price} Block Bucks?`}
                 </p>
                 <div className="flex">
@@ -555,7 +580,7 @@ const ConfirmationModal: React.FC<ConfirmationProps> = ({
         {/* if has Banner or lifetime */}
         {(hasBanner || hasLifeTime) && (
           <>
-            <p className="text-sm my-4">{`You already own a ${
+            <p className="text-xs sm:text-sm my-4">{`You already own a ${
               hasLifeTime ? "Lifetime Farmer Banner" : banner
             }.`}</p>
             <div className="flex">

@@ -440,6 +440,7 @@ const generalTerms: Record<GeneralTerms, string> = {
   "visit.land": "Visit land",
   wallet: "Wallet",
   warning: "Warning",
+  was: "Was",
   welcome: "Welcome!",
   "wishing.well": "Wishing Well",
   withdraw: "Withdraw",

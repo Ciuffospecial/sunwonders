@@ -404,6 +404,7 @@ const generalTerms: Record<GeneralTerms, string> = {
   "visit.land": "Visitar terra",
   wallet: "Carteira",
   warning: "Aviso",
+  was: ENGLISH_TERMS["was"],
   welcome: "Bem-vindo!",
   "wishing.well": "Poço dos Desejos",
   withdraw: "Sacar",

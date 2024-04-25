@@ -434,6 +434,7 @@ const generalTerms: Record<GeneralTerms, string> = {
   "visit.land": "Adayı Ziyaret Et",
   wallet: "Cüzdan",
   warning: "Uyarı",
+  was: ENGLISH_TERMS["was"],
   welcome: "Hoş Geldin!",
   "wishing.well": "Dilek Kuyusu",
   withdraw: "Çekme",

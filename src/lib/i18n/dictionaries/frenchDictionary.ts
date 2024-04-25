@@ -472,6 +472,7 @@ const generalTerms: Record<GeneralTerms, string> = {
   "visit.land": "Visiter l'île",
   wallet: "Portefeuille",
   warning: "Avertissement",
+  was: ENGLISH_TERMS["was"],
   wearables: "Vêtements",
   welcome: "Bienvenue!",
   "wishing.well": "Puits à souhaits",

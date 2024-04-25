@@ -24,6 +24,7 @@ type Options = {
 export function getBannerPrice(
   banner: SeasonalBanner | "Lifetime Farmer Banner",
   hasPreviousBanner: boolean,
+  hasGoldPass: boolean,
   createdAt: number = Date.now()
 ): Decimal {
   if (banner === "Lifetime Farmer Banner") {
@@ -40,7 +41,9 @@ export function getBannerPrice(
   );
 
   if (weeksElapsed < 2) {
-    return new Decimal(hasPreviousBanner ? 50 : 65);
+    const previousBannerDiscount = hasPreviousBanner ? 15 : 0;
+    const goldPassDiscount = hasGoldPass ? 15 : 0;
+    return new Decimal(65).sub(previousBannerDiscount).sub(goldPassDiscount);
   }
   if (weeksElapsed < 4) {
     return new Decimal(90);
@@ -106,9 +109,15 @@ export function purchaseBanner({
   }
 
   const previousBanner = getPreviousSeasonalBanner();
-  const hasPreviousBanner = !!inventory[previousBanner];
+  const hasPreviousBanner = (inventory[previousBanner] ?? new Decimal(0)).gt(0);
+  const hasGoldPass = (inventory["Gold Pass"] ?? new Decimal(0)).gt(0);
 
-  const price = getBannerPrice(action.name, hasPreviousBanner, createdAt);
+  const price = getBannerPrice(
+    action.name,
+    hasPreviousBanner,
+    hasGoldPass,
+    createdAt
+  );
 
   if (currentBlockBucks.lessThan(price)) {
     throw new Error("Insufficient Block Bucks");

@@ -263,6 +263,7 @@ export type GeneralTerms =
   | "visit.land"
   | "wallet"
   | "warning"
+  | "was"
   | "welcome"
   | "wish"
   | "wishing.well"
